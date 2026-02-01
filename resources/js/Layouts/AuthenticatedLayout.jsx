@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
+    const flash = usePage().props.flash || {};
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
@@ -28,7 +29,31 @@ export default function AuthenticatedLayout({ header, children }) {
                                     href={route('dashboard')}
                                     active={route().current('dashboard')}
                                 >
-                                    Dashboard
+                                    ダッシュボード
+                                </NavLink>
+                                <NavLink
+                                    href={route('workouts.index')}
+                                    active={route().current('workouts.*')}
+                                >
+                                    ワークアウト
+                                </NavLink>
+                                <NavLink
+                                    href={route('exercises.index')}
+                                    active={route().current('exercises.*')}
+                                >
+                                    種目
+                                </NavLink>
+                                <NavLink
+                                    href={route('meals.index')}
+                                    active={route().current('meals.*')}
+                                >
+                                    食事
+                                </NavLink>
+                                <NavLink
+                                    href={route('body-weights.index')}
+                                    active={route().current('body-weights.*')}
+                                >
+                                    体重
                                 </NavLink>
                             </div>
                         </div>
@@ -64,14 +89,14 @@ export default function AuthenticatedLayout({ header, children }) {
                                         <Dropdown.Link
                                             href={route('profile.edit')}
                                         >
-                                            Profile
+                                            プロフィール
                                         </Dropdown.Link>
                                         <Dropdown.Link
                                             href={route('logout')}
                                             method="post"
                                             as="button"
                                         >
-                                            Log Out
+                                            ログアウト
                                         </Dropdown.Link>
                                     </Dropdown.Content>
                                 </Dropdown>
@@ -132,7 +157,31 @@ export default function AuthenticatedLayout({ header, children }) {
                             href={route('dashboard')}
                             active={route().current('dashboard')}
                         >
-                            Dashboard
+                            ダッシュボード
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('workouts.index')}
+                            active={route().current('workouts.*')}
+                        >
+                            ワークアウト
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('exercises.index')}
+                            active={route().current('exercises.*')}
+                        >
+                            種目
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('meals.index')}
+                            active={route().current('meals.*')}
+                        >
+                            食事
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('body-weights.index')}
+                            active={route().current('body-weights.*')}
+                        >
+                            体重
                         </ResponsiveNavLink>
                     </div>
 
@@ -148,14 +197,14 @@ export default function AuthenticatedLayout({ header, children }) {
 
                         <div className="mt-3 space-y-1">
                             <ResponsiveNavLink href={route('profile.edit')}>
-                                Profile
+                                プロフィール
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 method="post"
                                 href={route('logout')}
                                 as="button"
                             >
-                                Log Out
+                                ログアウト
                             </ResponsiveNavLink>
                         </div>
                     </div>
@@ -168,6 +217,22 @@ export default function AuthenticatedLayout({ header, children }) {
                         {header}
                     </div>
                 </header>
+            )}
+
+            {flash.message && (
+                <div className="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="rounded-md bg-green-50 p-4">
+                        <p className="text-sm font-medium text-green-800">{flash.message}</p>
+                    </div>
+                </div>
+            )}
+
+            {flash.error && (
+                <div className="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="rounded-md bg-red-50 p-4">
+                        <p className="text-sm font-medium text-red-800">{flash.error}</p>
+                    </div>
+                </div>
             )}
 
             <main>{children}</main>

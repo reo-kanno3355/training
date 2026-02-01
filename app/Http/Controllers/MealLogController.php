@@ -4,62 +4,120 @@ namespace App\Http\Controllers;
 
 use App\Models\MealLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class MealLogController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $meals = $request->user()
+            ->mealLogs()
+            ->orderByDesc('date')
+            ->orderByRaw("CASE meal_type WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'dinner' THEN 3 WHEN 'snack' THEN 4 ELSE 5 END")
+            ->paginate(20);
+
+        return Inertia::render('Meals/Index', [
+            'meals' => $meals,
+            'mealTypes' => self::mealTypes(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return Inertia::render('Meals/Create', [
+            'mealTypes' => self::mealTypes(),
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'meal_type' => 'required|in:breakfast,lunch,dinner,snack',
+            'meal_name' => 'required|string|max:255',
+            'calories' => 'nullable|integer|min:0',
+            'protein' => 'nullable|numeric|min:0',
+            'carbs' => 'nullable|numeric|min:0',
+            'fat' => 'nullable|numeric|min:0',
+            'memo' => 'nullable|string|max:1000',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('meals', 'public');
+        }
+
+        $request->user()->mealLogs()->create($validated);
+
+        return redirect()->route('meals.index')->with('message', '食事を記録しました。');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(MealLog $mealLog)
+    public function edit(MealLog $meal)
     {
-        //
+        $this->authorize($meal);
+
+        return Inertia::render('Meals/Edit', [
+            'meal' => $meal,
+            'mealTypes' => self::mealTypes(),
+        ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MealLog $mealLog)
+    public function update(Request $request, MealLog $meal)
     {
-        //
+        $this->authorize($meal);
+
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'meal_type' => 'required|in:breakfast,lunch,dinner,snack',
+            'meal_name' => 'required|string|max:255',
+            'calories' => 'nullable|integer|min:0',
+            'protein' => 'nullable|numeric|min:0',
+            'carbs' => 'nullable|numeric|min:0',
+            'fat' => 'nullable|numeric|min:0',
+            'memo' => 'nullable|string|max:1000',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($meal->image) {
+                Storage::disk('public')->delete($meal->image);
+            }
+            $validated['image'] = $request->file('image')->store('meals', 'public');
+        }
+
+        $meal->update($validated);
+
+        return redirect()->route('meals.index')->with('message', '食事記録を更新しました。');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, MealLog $mealLog)
+    public function destroy(MealLog $meal)
     {
-        //
+        $this->authorize($meal);
+
+        if ($meal->image) {
+            Storage::disk('public')->delete($meal->image);
+        }
+
+        $meal->delete();
+
+        return redirect()->route('meals.index')->with('message', '食事記録を削除しました。');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(MealLog $mealLog)
+    private function authorize(MealLog $meal): void
     {
-        //
+        if ($meal->user_id !== auth()->id()) {
+            abort(403);
+        }
+    }
+
+    public static function mealTypes(): array
+    {
+        return [
+            'breakfast' => '朝食',
+            'lunch' => '昼食',
+            'dinner' => '夕食',
+            'snack' => '間食',
+        ];
     }
 }
