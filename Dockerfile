@@ -1,37 +1,35 @@
 FROM php:8.2-cli
 
-# 必要なPHP拡張をインストール
 RUN apt-get update && apt-get install -y \
     unzip \
     curl \
     git \
     libsqlite3-dev \
-    nodejs \
-    npm \
     && docker-php-ext-install pdo pdo_sqlite \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Composerをインストール
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --optimize-autoloader --no-dev --no-scripts
+
+COPY package.json package-lock.json ./
+RUN npm install
+
 COPY . .
 
-# 依存関係インストール＆ビルド
-RUN composer install --optimize-autoloader --no-dev
-RUN npm install && npm run build
+RUN npm run build
 
-# Laravelの最適化
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache
-
-# SQLiteファイル作成
-RUN touch database/database.sqlite
-
-# storage/logsの権限設定
-RUN chmod -R 775 storage bootstrap/cache
+RUN touch database/database.sqlite \
+    && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 10000
 
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=10000
+CMD php artisan migrate --force \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache \
+    && php artisan serve --host=0.0.0.0 --port=10000
