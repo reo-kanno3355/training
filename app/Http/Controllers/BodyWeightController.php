@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreBodyWeightRequest;
+use App\Http\Requests\UpdateBodyWeightRequest;
 use App\Models\BodyWeight;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,20 +34,9 @@ class BodyWeightController extends Controller
         return Inertia::render('BodyWeights/Create');
     }
 
-    public function store(Request $request)
+    public function store(StoreBodyWeightRequest $request)
     {
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'weight' => 'required|numeric|min:20|max:300',
-            'body_fat_percentage' => 'nullable|numeric|min:1|max:60',
-        ]);
-
-        $exists = $request->user()->bodyWeights()->where('date', $validated['date'])->exists();
-        if ($exists) {
-            return back()->withErrors(['date' => 'この日付の記録は既に存在します。']);
-        }
-
-        $request->user()->bodyWeights()->create($validated);
+        $request->user()->bodyWeights()->create($request->validated());
 
         return redirect()->route('body-weights.index')->with('message', '体重を記録しました。');
     }
@@ -59,25 +50,11 @@ class BodyWeightController extends Controller
         ]);
     }
 
-    public function update(Request $request, BodyWeight $bodyWeight)
+    public function update(UpdateBodyWeightRequest $request, BodyWeight $bodyWeight)
     {
         $this->authorize($bodyWeight);
 
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'weight' => 'required|numeric|min:20|max:300',
-            'body_fat_percentage' => 'nullable|numeric|min:1|max:60',
-        ]);
-
-        $exists = $request->user()->bodyWeights()
-            ->where('date', $validated['date'])
-            ->where('id', '!=', $bodyWeight->id)
-            ->exists();
-        if ($exists) {
-            return back()->withErrors(['date' => 'この日付の記録は既に存在します。']);
-        }
-
-        $bodyWeight->update($validated);
+        $bodyWeight->update($request->validated());
 
         return redirect()->route('body-weights.index')->with('message', '体重記録を更新しました。');
     }
