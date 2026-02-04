@@ -1,4 +1,4 @@
-FROM php:8.2-cli
+FROM php:8.4-cli
 
 RUN apt-get update && apt-get install -y \
     unzip \
@@ -16,8 +16,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY composer.json composer.lock ./
-
-RUN php -m && composer install --optimize-autoloader --no-dev --no-scripts -vvv
+RUN composer install --optimize-autoloader --no-dev --no-scripts
 
 COPY package.json package-lock.json ./
 RUN npm install
